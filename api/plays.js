@@ -15,9 +15,10 @@ export default async function handler(req) {
 
   const query = {
     query: `{
-      transactions(tags: [
-        { name: "walletAddress", values: ["${wallet.toLowerCase()}"] }
-      ], first: 200) {
+      transactions(
+        first: 200,
+        owners: ["${wallet.toLowerCase()}"]
+      ) {
         edges {
           node {
             id

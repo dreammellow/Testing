@@ -1,4 +1,6 @@
-export const config = { runtime: 'edge' }; // ⬅️ Add this line
+// api/plays.js
+
+export const config = { runtime: 'edge' };
 
 export default async function handler(req) {
   const { searchParams } = new URL(req.url);
@@ -27,7 +29,7 @@ export default async function handler(req) {
   };
 
   try {
-    const response = await fetch("https://arweave.net/graphql", {
+    const response = await fetch("https://arweave.mainnet.irys.xyz/graphql", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(query),
@@ -41,7 +43,7 @@ export default async function handler(req) {
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (e) {
-    return new Response(JSON.stringify({ error: 'Failed to fetch from Arweave' }), {
+    return new Response(JSON.stringify({ error: 'Failed to fetch from Irys' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     });

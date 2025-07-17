@@ -1,5 +1,3 @@
-// api/plays.js
-
 export const config = { runtime: 'edge' };
 
 export default async function handler(req) {
@@ -7,43 +5,60 @@ export default async function handler(req) {
   const wallet = searchParams.get('wallet');
 
   if (!wallet || !wallet.startsWith('0x')) {
-    return new Response(JSON.stringify({ error: 'Invalid wallet address' }), {
+    return new Response(JSON.stringify({ error: 'Missing or invalid wallet' }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
     });
   }
 
   const query = {
-    query: `{
-      transactions(
-        first: 200,
-        owners: ["${wallet.toLowerCase()}"]
-      ) {
-        edges {
-          node {
-            id
+    operationName: "SyncCredentialValue",
+    variables: {
+      input: {
+        address: wallet,
+        credentialId: "GCFtLtfrJH" // SpriteType quest ID
+      }
+    },
+    query: `
+      mutation SyncCredentialValue($input: SyncCredentialValueInput!) {
+        syncCredentialValue(input: $input) {
+          value {
+            address
+            allow
+            __typename
           }
+          message
+          __typename
         }
       }
-    }`
+    `
   };
 
   try {
-    const response = await fetch("https://arweave.mainnet.irys.xyz/graphql", {
+    const res = await fetch("https://graphigo.prd.galaxy.eco/query", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(query),
+      headers: {
+        "Content-Type": "application/json",
+        "Origin": "https://app.galxe.com",
+        "Referer": "https://app.galxe.com",
+      },
+      body: JSON.stringify(query)
     });
 
-    const result = await response.json();
-    const count = result?.data?.transactions?.edges?.length || 0;
+    const data = await res.json();
+    const allowed = data?.data?.syncCredentialValue?.value?.allow;
 
-    return new Response(JSON.stringify({ wallet, playCount: count }), {
+    return new Response(JSON.stringify({
+      wallet,
+      quest: "Irys SpriteType",
+      status: allowed ? "✅ Completed" : "❌ Not yet eligible"
+    }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
-  } catch (e) {
-    return new Response(JSON.stringify({ error: 'Failed to fetch from Irys' }), {
+
+  } catch (err) {
+    return new Response(JSON.stringify({ error: 'Failed to contact Galxe API' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     });

@@ -1,16 +1,49 @@
-// api/plays.js
+export const config = { runtime: 'edge' }; // ⬅️ Add this line
 
-export default async function handler(req, res) { const { wallet } = req.query; if (!wallet || !wallet.startsWith("0x")) { return res.status(400).json({ error: "Invalid wallet address" }); }
+export default async function handler(req) {
+  const { searchParams } = new URL(req.url);
+  const wallet = searchParams.get('wallet');
 
-const query = { query: { transactions(tags: [ { name: "App-Name", values: ["spritetype-irys"] }, { name: "walletAddress", values: ["${wallet.toLowerCase()}"] } ], first: 100) { edges { node { id } } } } };
+  if (!wallet || !wallet.startsWith('0x')) {
+    return new Response(JSON.stringify({ error: 'Invalid wallet address' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
 
-try { const response = await fetch("https://arweave.net/graphql", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(query), });
+  const query = {
+    query: `{
+      transactions(tags: [
+        { name: "App-Name", values: ["spritetype-irys"] },
+        { name: "walletAddress", values: ["${wallet.toLowerCase()}"] }
+      ], first: 100) {
+        edges {
+          node {
+            id
+          }
+        }
+      }
+    }`
+  };
 
-const result = await response.json();
-const count = result?.data?.transactions?.edges?.length || 0;
-res.status(200).json({ wallet, playCount: count });
+  try {
+    const response = await fetch("https://arweave.net/graphql", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(query),
+    });
 
-} catch (e) { res.status(500).json({ error: "Failed to fetch from Arweave" }); } }
+    const result = await response.json();
+    const count = result?.data?.transactions?.edges?.length || 0;
 
-// Save this file as: api/plays.js
-
+    return new Response(JSON.stringify({ wallet, playCount: count }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  } catch (e) {
+    return new Response(JSON.stringify({ error: 'Failed to fetch from Arweave' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+}

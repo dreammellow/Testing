@@ -16,9 +16,8 @@ export default async function handler(req) {
   const query = {
     query: `{
       transactions(tags: [
-        { name: "App-Name", values: ["spritetype-irys"] },
         { name: "walletAddress", values: ["${wallet.toLowerCase()}"] }
-      ], first: 100) {
+      ], first: 200) {
         edges {
           node {
             id
